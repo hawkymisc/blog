@@ -1,0 +1,14 @@
+# Quarto
+_site/
+/.quarto/
+_freeze/
+
+# Environment
+.env
+.env.local
+*.secret
+
+# System
+.DS_Store
+Thumbs.db
+*.log
