@@ -4,8 +4,5 @@ reviews:
   review_status: true
   poem: false
   collapse_walkthrough: false
-  # Enable reviews for all branches, not just the default branch
-  base_branches:
-    - "**"
 chat:
   auto_reply: true
