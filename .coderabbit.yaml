@@ -1,0 +1,7 @@
+language: ja-JP
+reviews:
+  review_status: true
+  poem: false
+  collapse_walkthrough: false
+chat:
+  auto_reply: true
