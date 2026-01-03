@@ -1,0 +1,28 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Hawkie's Blog"
+  description: "Personal memo and technical articles"
+
+  navbar:
+    background: primary
+    left:
+      - text: "Home"
+        href: index.html
+      - text: "About"
+        href: about.html
+
+execute:
+  freeze: auto
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    code-fold: false
+    link-external-newwindow: true
