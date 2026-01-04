@@ -159,6 +159,151 @@ $ git merge-base origin/develop origin/main
 
 両ブランチは同じ祖先から分岐し、似たようなコミットメッセージを持つが、**異なるコミットハッシュ**を持っている。これは別々の作業ブランチから作成されたことを示している。
 
+#### ⚠️ 重要: コミットハッシュは時間とともに変わる
+
+**上記のコミットハッシュ（`1745e06`、`3c05fc0`、`10ff128`など）は、このセッション時点のものです。**
+
+ブランチが進化すると：
+- 新しいコミットが追加される
+- マージやリベースにより構造が変わる
+- 共通の祖先も変化する可能性がある
+
+**そのため、常に動的にブランチ状態を確認する必要があります。**
+
+#### 分岐構造が変わった場合の対応
+
+##### シナリオ1: mainとdevelopが進化している
+
+```bash
+# 現在の状態を確認
+$ git fetch origin
+$ git log --oneline --graph origin/develop origin/main -10
+
+# 例: 両方とも進化している場合
+* 7a8b9c0 (origin/develop) Add: New feature X
+* 4d5e6f0 Update: Improve performance
+| * 2b3c4d5 (origin/main) Fix: Bug in deployment
+| * 9e8f7g6 Update: Security patch
+|/
+* 1a2b3c4 (共通の祖先)
+
+# 共通の祖先を動的に確認
+$ git merge-base origin/develop origin/main
+1a2b3c4...  # ← この値は変わる可能性がある
+```
+
+##### シナリオ2: developがmainにマージされた後
+
+```bash
+# developの変更がmainにマージされると構造が変わる
+$ git log --oneline --graph origin/develop origin/main -10
+
+* 8h9i0j1 (origin/main) Merge branch 'develop'
+|\
+| * 3c05fc0 (origin/develop) Add: Create styles.css
+|/
+* 1745e06 activate Pages
+
+# この場合、developとmainは再び同期される
+$ git merge-base origin/develop origin/main
+8h9i0j1...  # ← マージコミットが新しい共通祖先になる
+```
+
+##### シナリオ3: コミットハッシュが完全に異なる
+
+```bash
+# リベースやフォースプッシュがあった場合
+$ git fetch origin
+warning: fetch updated the current branch head.
+fast-forwarding your working tree...
+
+# ブランチ構造を再確認
+$ git log --oneline --graph --all --decorate -20
+
+# 必要に応じて、再度どちらのブランチが先行しているか判断
+```
+
+#### 対応方法の原則
+
+**✅ 正しい対応:**
+1. **常に `git merge-base` を使用** - ハードコードされたハッシュに依存しない
+2. **動的にブランチ状態を確認** - セッション開始時に必ず `git fetch` と比較を実施
+3. **最新コミット日時とコミット数で判断** - ハッシュではなく、これらの情報で先行度を判断
+
+**❌ 避けるべき対応:**
+1. ~~過去のコミットハッシュをハードコード~~
+2. ~~一度の確認結果に依存~~
+3. ~~視覚的なグラフだけで判断~~
+
+#### 汎用的なブランチ比較スクリプト
+
+```bash
+#!/bin/bash
+# ブランチ比較スクリプト（汎用版）
+
+BRANCH1=${1:-origin/develop}
+BRANCH2=${2:-origin/main}
+
+echo "=== ブランチ比較: $BRANCH1 vs $BRANCH2 ==="
+echo
+
+# リモート情報を同期
+git fetch origin
+
+# コミット数
+COUNT1=$(git rev-list --count $BRANCH1)
+COUNT2=$(git rev-list --count $BRANCH2)
+echo "コミット数:"
+echo "  $BRANCH1: $COUNT1"
+echo "  $BRANCH2: $COUNT2"
+echo
+
+# 最新コミット日時
+LATEST1=$(git log -1 --format="%ci %s" $BRANCH1)
+LATEST2=$(git log -1 --format="%ci %s" $BRANCH2)
+echo "最新コミット:"
+echo "  $BRANCH1: $LATEST1"
+echo "  $BRANCH2: $LATEST2"
+echo
+
+# 共通の祖先
+MERGE_BASE=$(git merge-base $BRANCH1 $BRANCH2)
+echo "共通の祖先: $MERGE_BASE"
+echo "  $(git log -1 --format='%s' $MERGE_BASE)"
+echo
+
+# 各ブランチ固有のコミット数
+COMMITS_ONLY_1=$(git rev-list --count $MERGE_BASE..$BRANCH1)
+COMMITS_ONLY_2=$(git rev-list --count $MERGE_BASE..$BRANCH2)
+echo "分岐後のコミット数:"
+echo "  $BRANCH1: $COMMITS_ONLY_1"
+echo "  $BRANCH2: $COMMITS_ONLY_2"
+echo
+
+# ファイル差分
+echo "ファイル差分:"
+git diff --stat $BRANCH1 $BRANCH2
+echo
+
+# 結論
+if [ $COUNT1 -gt $COUNT2 ]; then
+    echo "結論: $BRANCH1 が先行しています"
+elif [ $COUNT2 -gt $COUNT1 ]; then
+    echo "結論: $BRANCH2 が先行しています"
+else
+    echo "結論: 同じコミット数です。日時で判断してください"
+fi
+```
+
+使用方法:
+```bash
+# デフォルト（develop vs main）
+$ ./compare-branches.sh
+
+# 任意のブランチを比較
+$ ./compare-branches.sh origin/feature origin/develop
+```
+
 ### 結論
 
 **`develop` ブランチが先行している**
