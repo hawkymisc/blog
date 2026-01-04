@@ -49,8 +49,8 @@ $ git branch -a
 
 # リモートに直接問い合わせ - mainとdevelopが見つかる
 $ git ls-remote --heads origin
-3c05fc001eae43925fdae11d56ff967e724f9eaf refs/heads/develop
-10ff1281d4f46f54d0f276a9e8524634fc5d1cc7 refs/heads/main
+3c05fc001eae43925fdae11d56ff967e724f9eaf	refs/heads/develop
+10ff1281d4f46f54d0f276a9e8524634fc5d1cc7	refs/heads/main
 
 # fetchで同期
 $ git fetch origin
